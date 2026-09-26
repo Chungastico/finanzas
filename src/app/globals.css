@@ -241,6 +241,35 @@ label.lbl { display: flex; flex-direction: column; gap: 5px; font-size: 12px; fo
 .goal details[open] summary { margin-bottom: 10px; }
 .strategy { background: var(--panel-2); border: 1px solid var(--line-2); border-left: 3px solid var(--yellow); border-radius: 10px; padding: 10px 12px; font-size: 13px; white-space: pre-wrap; color: var(--ink-2); }
 
+/* objetivos agrupados por dueño */
+.owner { --p: var(--green); margin-bottom: 28px; }
+.owner.gabriel { --p: #4a8fd6; } .owner.mel { --p: #e879a6; } .owner.hogar { --p: var(--green); }
+.owner-head { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--p); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow); }
+.owner-id { display: flex; align-items: center; gap: 12px; min-width: 200px; }
+.owner-id h2 { margin: 0; font-size: 17px; letter-spacing: -.01em; }
+.avatar { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; color: #fff; background: var(--p); flex: none; }
+.avatar.hogar { border-radius: 11px; }
+.owner-stats { display: flex; gap: 22px; flex-wrap: wrap; margin-left: auto; }
+.owner-stats small { display: block; color: var(--muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.owner-stats b { font-variant-numeric: tabular-nums; font-size: 15px; }
+.owner-bar { margin: 10px 2px 14px; }
+.owner-bar .bar > i { background: var(--p); }
+.owner .goals { margin-top: 14px; }
+.owner-bar + .goals { margin-top: 0; }
+/* Resumen: tablero con una columna por dueño */
+.owners { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.owners .owner { margin-bottom: 0; }
+.owners .owner-head { flex-direction: column; align-items: stretch; gap: 12px; }
+.owners .owner-id { min-width: 0; }
+.owners .owner-stats { margin-left: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+.owners .owner-head .btn { justify-content: center; }
+.owners .goals { grid-template-columns: 1fr; }
+@media (max-width: 1200px) { .owners { grid-template-columns: 1fr; } }
+.goal-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center; min-height: 170px; border: 2px dashed var(--line); border-radius: var(--radius); background: transparent; color: var(--muted); cursor: pointer; padding: 18px; font: inherit; }
+.goal-empty b { color: var(--ink); }
+.goal-empty svg { color: var(--p); }
+.goal-empty:hover { border-color: var(--p); background: var(--panel); }
+
 /* empty / onboarding */
 .empty { text-align: center; padding: 36px 20px; color: var(--muted); }
 .empty h3 { color: var(--ink); margin: 8px 0 4px; }
@@ -294,4 +323,5 @@ label.lbl { display: flex; flex-direction: column; gap: 5px; font-size: 12px; fo
   .donut-wrap { grid-template-columns: 1fr; justify-items: center; }
   .donut-list { width: 100%; }
   .form-grid { grid-template-columns: 1fr; }
+  .owner-stats { margin-left: 0; gap: 16px; }
 }

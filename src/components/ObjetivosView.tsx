@@ -9,7 +9,7 @@ import {
 } from "@/lib/actions";
 import { ESTADO_CHIP, ESTADO_TXT, proyeccion } from "@/lib/calc";
 import { fechaCorta, fechaMes, money, parseNum, pct, sum } from "@/lib/format";
-import { personaNombre, type Objetivo, type ObjetivoAporte, type Persona, type Vista } from "@/lib/types";
+import type { Objetivo, ObjetivoAporte, Persona, Vista } from "@/lib/types";
 import { Bar } from "./charts";
 import { ActionButton, DateCell, NumCell, SelectCell, TextCell, personaOptions, toast, useSave } from "./fields";
 
@@ -27,11 +27,19 @@ const HORIZ = [
   { k: "largo", t: "Largo plazo", d: "más de 3 años" },
 ] as const;
 const PRIO = { 1: "Alta", 2: "Media", 3: "Baja" } as const;
+const GRUPOS: { k: Persona; t: string; d: string }[] = [
+  { k: "gabriel", t: "Gabriel", d: "Objetivos personales" },
+  { k: "mel", t: "Mel", d: "Objetivos personales" },
+  { k: "hogar", t: "Hogar", d: "Objetivos en grupo · se financian con el fondo común" },
+];
 
 export default function ObjetivosView({ vista, objetivos, aportes, plan }: {
   vista: Vista; objetivos: Objetivo[]; aportes: ObjetivoAporte[]; plan: Record<number, number>;
 }) {
-  const [nuevo, setNuevo] = useState(false);
+  // null = modal cerrado; si no, el dueño con el que se abre
+  const [nuevo, setNuevo] = useState<Persona | null>(null);
+  const abrir = (p?: Persona) => setNuevo(p ?? (vista === "todos" ? "hogar" : vista));
+  const grupos = GRUPOS.filter((g) => vista === "todos" || g.k === vista);
   const activos = objetivos.filter((o) => o.estado === "activo");
   const proy = new Map(objetivos.map((o) => [o.id, proyeccion(o)]));
   const necesario = sum(activos, (o) => proy.get(o.id)!.necesario);
@@ -45,7 +53,7 @@ export default function ObjetivosView({ vista, objetivos, aportes, plan }: {
         <p className="muted" style={{ margin: 0, maxWidth: 640 }}>
           Define hacia dónde va tu dinero. Vincula tus ahorros y pagos de deuda del presupuesto a cada objetivo y el avance se actualiza solo.
         </p>
-        <div className="actions"><button className="btn primary" onClick={() => setNuevo(true)}><Plus size={15} /> Nuevo objetivo</button></div>
+        <div className="actions"><button className="btn primary" onClick={() => abrir()}><Plus size={15} /> Nuevo objetivo</button></div>
       </div>
 
       <div className="kpis">
@@ -68,38 +76,54 @@ export default function ObjetivosView({ vista, objetivos, aportes, plan }: {
         </div>
       </div>
 
-      {objetivos.length === 0 && (
-        <div className="card empty">
-          <Flag size={30} color="var(--green)" />
-          <h3>Tu primer objetivo</h3>
-          <p className="small">Un buen inicio: fondo de emergencia de 3 a 6 meses de gastos.</p>
-          <button className="btn primary" onClick={() => setNuevo(true)}><Plus size={15} /> Crear objetivo</button>
-        </div>
-      )}
-
-      {HORIZ.map((h) => {
-        const list = objetivos.filter((o) => o.horizonte === h.k);
-        if (!list.length) return null;
+      <div className={vista === "todos" ? "owners" : undefined}>
+      {grupos.map((g) => {
+        const list = objetivos.filter((o) => o.persona === g.k);
+        const act = list.filter((o) => o.estado === "activo");
+        const meta = sum(act, (o) => o.monto_meta), acum = sum(act, (o) => o.acumulado);
         return (
-          <section key={h.k} style={{ marginBottom: 24 }}>
-            <h2 style={{ fontSize: 15, margin: "0 0 10px", display: "flex", gap: 8, alignItems: "baseline" }}>
-              {h.t} <span className="muted small" style={{ fontWeight: 500 }}>{h.d}</span>
-            </h2>
+          <section key={g.k} className={"owner " + g.k}>
+            <div className="owner-head">
+              <div className="owner-id">
+                <span className={`avatar ${g.k}`}>{g.k === "hogar" ? <Home size={17} /> : g.t[0]}</span>
+                <div>
+                  <h2>{g.t}</h2>
+                  <span className="muted small">{g.d}</span>
+                </div>
+              </div>
+              <div className="owner-stats">
+                <div><small>Avance</small><b>{act.length ? pct(acum / (meta || 1)) : "—"}</b></div>
+                <div><small>Activos</small><b>{act.length}</b></div>
+                <div><small>Necesita</small><b>{money(sum(act, (o) => proy.get(o.id)!.necesario))}<span className="muted small">/mes</span></b></div>
+                <div><small>Plan aparta</small><b>{money(sum(act, (o) => plan[o.id]))}<span className="muted small">/mes</span></b></div>
+              </div>
+              <button className="btn sm" onClick={() => abrir(g.k)}><Plus size={14} /> Objetivo</button>
+            </div>
+            {act.length > 0 && <div className="owner-bar"><Bar value={acum} max={meta} /></div>}
             <div className="goals">
               {list.map((o) => (
-                <GoalCard key={o.id} o={o} vista={vista} plan={plan[o.id] ?? 0} aportes={aportes.filter((a) => a.objetivo_id === o.id)} />
+                <GoalCard key={o.id} o={o} plan={plan[o.id] ?? 0} aportes={aportes.filter((a) => a.objetivo_id === o.id)} />
               ))}
+              {list.length === 0 && (
+                <button className="goal-empty" onClick={() => abrir(g.k)}>
+                  <Flag size={22} />
+                  <b>{g.k === "hogar" ? "Sin objetivos en grupo" : `${g.t} aún no tiene objetivos`}</b>
+                  <span className="small">{g.k === "hogar" ? "Ej. fondo de emergencia del hogar, viaje juntos, mudanza." : "Ej. fondo personal, pagar una tarjeta, curso."}</span>
+                  <span className="btn sm primary" style={{ marginTop: 6 }}><Plus size={14} /> Crear objetivo</span>
+                </button>
+              )}
             </div>
           </section>
         );
       })}
+      </div>
 
-      {nuevo && <NuevoModal vista={vista} onClose={() => setNuevo(false)} />}
+      {nuevo && <NuevoModal persona={nuevo} onClose={() => setNuevo(null)} />}
     </>
   );
 }
 
-function GoalCard({ o, vista, plan, aportes }: { o: Objetivo; vista: Vista; plan: number; aportes: ObjetivoAporte[] }) {
+function GoalCard({ o, plan, aportes }: { o: Objetivo; plan: number; aportes: ObjetivoAporte[] }) {
   const pr = proyeccion(o);
   const cat = CATS.find((c) => c.k === o.categoria) ?? CATS[5];
   const dim = o.estado !== "activo";
@@ -112,7 +136,7 @@ function GoalCard({ o, vista, plan, aportes }: { o: Objetivo; vista: Vista; plan
           <div className="meta">
             <span className={"chip " + ESTADO_CHIP[pr.estado]}>{o.estado === "pausado" ? "Pausado" : ESTADO_TXT[pr.estado]}</span>
             <span className="chip">Prioridad {PRIO[o.prioridad]}</span>
-            {vista === "todos" && <span className="chip"><span className={`dot ${o.persona}`} /> {personaNombre(o.persona)}</span>}
+            <span className="chip">{HORIZ.find((h) => h.k === o.horizonte)?.t}</span>
           </div>
         </div>
       </div>
@@ -205,10 +229,10 @@ function QuickAporte({ id }: { id: number }) {
   );
 }
 
-function NuevoModal({ vista, onClose }: { vista: Vista; onClose: () => void }) {
+function NuevoModal({ persona, onClose }: { persona: Persona; onClose: () => void }) {
   const { pending, run } = useSave();
   const [f, setF] = useState({
-    persona: (vista === "todos" ? "hogar" : vista) as Persona, nombre: "", categoria: "fondo", horizonte: "corto",
+    persona, nombre: "", categoria: "fondo", horizonte: "corto",
     prioridad: "2", monto_meta: "", monto_inicial: "", fecha_meta: "", estrategia: "",
   });
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value });
