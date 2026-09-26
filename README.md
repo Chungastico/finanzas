@@ -1,36 +1,42 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Finanzas
 
-## Getting Started
+Presupuesto del hogar para Gabriel y Mel. Next.js 16 (App Router) + Postgres en Neon.
 
-First, run the development server:
+## Cómo funciona
+
+- **Gabriel** y **Mel** manejan sus finanzas por separado: ingresos, ahorros, gastos fijos, gastos variables, deudas y un **aporte al hogar**.
+- El **Hogar** es el fondo común. Sus ingresos son los aportes de los dos y tiene sus propios gastos, ahorros, provisiones y objetivos. Lo que sobra cada mes se acumula como **saldo libre del fondo**.
+- **Resumen** consolida los tres bolsillos sin contar los aportes dos veces (son dinero que pasa de un bolsillo a otro).
+
+Lógica heredada del Excel original:
+
+- **Plan base**: el mes ideal. Se aplica a cada mes con un clic y ahí se captura lo real.
+- **Por colocar** = ingresos − (ahorros + provisiones + aportes + gastos + deudas).
+- **Gastos variables**: el real es la suma de los movimientos del mes.
+- **Provisiones**: dinero apartado para gastos anuales. Mensual = (meta − monto inicial) ÷ 12.
+- **Objetivos**: metas con fecha, prioridad y estrategia. Los ahorros y deudas del presupuesto se vinculan a un objetivo y su avance sube solo.
+
+## Desarrollo
 
 ```bash
+npm install
+cp .env.example .env        # pon tu DATABASE_URL de Neon
+npm run db:migrate          # crea el esquema "fin"
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Deploy en Vercel
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Importa este repositorio en Vercel (framework: Next.js; sin configuración extra).
+2. En **Settings → Environment Variables** agrega `DATABASE_URL` con la cadena de conexión *pooled* de Neon.
+3. Deploy. El esquema ya debe existir en la base (`npm run db:migrate` una vez desde tu máquina).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+> ⚠️ La app **todavía no tiene autenticación**: cualquiera con la URL puede ver y editar los datos.
+> Hasta agregar Clerk, protege el deploy con **Vercel → Settings → Deployment Protection**.
 
-## Learn More
+## Estructura
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `db/schema.sql` — tablas en el esquema `fin` · `db/migrate.mjs` aplica el esquema
+- `src/lib/data.ts` — consultas · `src/lib/actions.ts` — Server Actions (guardar/editar)
+- `src/lib/calc.ts` — cálculos (totales, por colocar, proyección de objetivos)
+- `src/app/(app)/` — páginas: dashboard, análisis, presupuesto, movimientos, provisiones, objetivos
