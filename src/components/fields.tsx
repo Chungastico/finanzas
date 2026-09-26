@@ -36,7 +36,7 @@ export function NumCell({ value, onSave, label, className, placeholder }: Base &
       aria-label={label}
       className={"cell n " + (className ?? "")}
       inputMode="decimal"
-      placeholder={placeholder ?? "—"}
+      placeholder={placeholder ?? "$0"}
       defaultValue={fmt(value)}
       onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
       onBlur={(e) => {

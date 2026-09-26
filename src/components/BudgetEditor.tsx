@@ -40,8 +40,8 @@ export default function BudgetEditor(props: Props) {
       <div className="summary-bar">
         <span className="pill">Ingresos plan <b>{money(t.ingreso.e)}</b></span>
         <span className="pill">Asignado <b>{money(t.ingreso.e - pcE)}</b></span>
-        <span className={"pill " + (pcE < 0 ? "red" : "accent")}>Por colocar <b>{money(pcE)}</b></span>
-        {!base && <span className={"pill " + (pcR < 0 ? "red" : "")}>Por colocar real <b>{money(pcR)}</b></span>}
+        <span className={"pill " + (pcE < 0 ? "red" : "accent")}>{vista === "hogar" ? (pcE < 0 ? "Faltan en el hogar" : "Va al fondo hogar") : "Por colocar"} <b>{money(pcE)}</b></span>
+        {!base && <span className={"pill " + (pcR < 0 ? "red" : "")}>{vista === "hogar" ? "Al fondo hogar (real)" : "Por colocar real"} <b>{money(pcR)}</b></span>}
         <span style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
           {!base && (
             <ActionButton
@@ -79,7 +79,13 @@ export default function BudgetEditor(props: Props) {
                 <span className="right num"><b>{money(base ? t[tp.k].e : t[tp.k].r)}</b>{!base && <span className="muted small"> / {money(t[tp.k].e)}</span>}</span>
               </div>
               <p className="muted small" style={{ margin: "-8px 0 10px" }}>
-                {tp.k === "ingreso" && vista === "hogar" ? "Los aportes de Gabriel y Mel entran solos; se editan en la vista de cada uno." : tp.ayuda}
+                {tp.k === "ingreso"
+                  ? vista === "hogar"
+                    ? "Los aportes de Gabriel y Mel entran solos; se editan en el presupuesto de cada uno."
+                    : base
+                      ? "Salario base y otros ingresos que se repiten cada mes."
+                      : "Lo que entró este mes. ¿Un bono, venta o trabajo extra? Agrégalo abajo: solo cuenta en este mes."
+                  : tp.ayuda}
               </p>
               <div className="scroll">
                 <table>
@@ -101,7 +107,7 @@ export default function BudgetEditor(props: Props) {
                         <td><span className="chip">auto</span></td>
                       </tr>
                     ))}
-                    {rows.length === 0 && !(tp.k === "ingreso" && aportes.length) && (
+                    {rows.length === 0 && !(tp.k === "ingreso" && aportes.length) && !(tp.k === "ahorro" && vista === "hogar") && (
                       <tr><td colSpan={6} className="t muted small">Nada todavía — agrega abajo.</td></tr>
                     )}
                     {rows.map((p) => {
@@ -143,6 +149,14 @@ export default function BudgetEditor(props: Props) {
                         </tr>
                       );
                     })}
+                    {tp.k === "ahorro" && vista === "hogar" && (
+                      <tr>
+                        <td className="t"><b>Fondo hogar</b> <span className="muted small">· lo que sobra se guarda solo</span></td>
+                        <td className={"n t " + (pcE < 0 ? "neg" : "")}>{fmt(pcE)}</td>
+                        {!base && <><td className={"n t " + (pcR < 0 ? "neg" : "")}>{fmt(pcR)}</td><td /></>}
+                        <td><span className="chip green">auto</span></td>
+                      </tr>
+                    )}
                     {calc && !base && extra.length > 0 && (
                       <tr>
                         <td className="t" colSpan={vista === "todos" ? 3 : 2}><span className="chip yellow">sin presupuesto</span> <span className="small muted">{[...new Set(extra.map((m) => m.categoria))].join(", ")}</span></td>
@@ -153,7 +167,15 @@ export default function BudgetEditor(props: Props) {
                   </tbody>
                 </table>
               </div>
-              <AddRow anio={anio} mes={mes} tipo={tp.k} vista={vista} defaultPersona={defaultPersona} placeholder={tp.col} />
+              <AddRow
+                anio={anio}
+                mes={mes}
+                tipo={tp.k}
+                vista={vista}
+                defaultPersona={defaultPersona}
+                placeholder={tp.k === "ingreso" ? (base ? "Nuevo ingreso (salario, freelance…)" : "Ingreso extra de este mes") : `Nuevo: ${tp.col.toLowerCase()}`}
+                sugerencias={tp.k === "ingreso" && vista !== "hogar" ? (base ? ["Salario", "Freelance", "Renta"] : ["Bono", "Freelance", "Venta", "Ingreso extra"]) : undefined}
+              />
             </section>
           );
         })}
@@ -192,8 +214,8 @@ export default function BudgetEditor(props: Props) {
   );
 }
 
-function AddRow({ anio, mes, tipo, vista, defaultPersona, placeholder }: {
-  anio: number; mes: number; tipo: Tipo; vista: Vista; defaultPersona: Persona; placeholder: string;
+function AddRow({ anio, mes, tipo, vista, defaultPersona, placeholder, sugerencias }: {
+  anio: number; mes: number; tipo: Tipo; vista: Vista; defaultPersona: Persona; placeholder: string; sugerencias?: string[];
 }) {
   const { pending, run } = useSave();
   const nombre = useRef<HTMLInputElement>(null);
@@ -212,7 +234,16 @@ function AddRow({ anio, mes, tipo, vista, defaultPersona, placeholder }: {
   };
   return (
     <form className="addrow" onSubmit={(e) => { e.preventDefault(); submit(); }}>
-      <input ref={nombre} className="field" placeholder={`Nuevo: ${placeholder.toLowerCase()}`} aria-label={placeholder} />
+      {sugerencias && (
+        <div className="quick" aria-label="Sugerencias">
+          {sugerencias.map((x) => (
+            <button type="button" key={x} className="chip" onClick={() => { nombre.current!.value = x; monto.current!.focus(); }}>
+              <Plus size={11} /> {x}
+            </button>
+          ))}
+        </div>
+      )}
+      <input ref={nombre} className="field" placeholder={placeholder} aria-label={placeholder} />
       {vista === "todos" && (
         <select className="field" aria-label="Persona" value={persona} onChange={(e) => setPersona(e.target.value as Persona)}>
           {personaOptions.map((o) => <option key={o.v} value={o.v}>{o.t}</option>)}

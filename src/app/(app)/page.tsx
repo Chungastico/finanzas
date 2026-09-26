@@ -31,7 +31,7 @@ export default async function Dashboard() {
   const hayDatos = resumen.some((r) => r.estimado || r.real) || objetivos.length > 0;
   const planVacio = base.n === 0;
 
-  // Fondo del hogar: lo que sobra cada mes (aportes − todo lo usado) se acumula como saldo libre
+  // Fondo hogar: lo que sobra cada mes (aportes − todo lo usado) se acumula como saldo libre
   const rh = vista === "hogar" ? resumen : resumenHogar;
   const saldoHogar = sum(Array.from({ length: mesActual }, (_, i) => i + 1), (m) => {
     const t = totalesDeResumen(rh, m);
@@ -217,12 +217,12 @@ export default async function Dashboard() {
 
         {(vista === "todos" || vista === "hogar") && (
           <section className="card">
-            <div className="card-head"><h2>Fondo del hogar</h2><span className="hint">saldo libre acumulado</span></div>
+            <div className="card-head"><h2>Fondo hogar</h2><span className="hint">se llena solo con lo que sobra</span></div>
             <div className="goal amounts" style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
               <strong style={{ fontSize: 26 }} className={saldoHogar < 0 ? "neg" : ""}>{money(saldoHogar)}</strong>
               <span className="muted small">a {MESES[mesActual - 1].toLowerCase()}</span>
             </div>
-            <p className="muted small" style={{ margin: "4px 0 12px" }}>Lo que sobra cada mes de los aportes después de gastos, ahorros y provisiones del hogar.</p>
+            <p className="muted small" style={{ margin: "4px 0 12px" }}>Cada mes, lo que sobra de los aportes después de los gastos, ahorros y provisiones del hogar se suma aquí automáticamente.</p>
             <div className="list">
               {bolsillos.filter((b) => b.persona !== "hogar").map((b) => (
                 <div className="row" key={b.persona}>

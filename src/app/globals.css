@@ -169,6 +169,9 @@ tfoot td { font-weight: 700; border-top: 1px solid var(--line); padding: 9px 8px
 .cell:hover { border-color: var(--line); }
 .cell:focus, .field:focus { outline: none; border-color: var(--green); background: var(--panel); box-shadow: 0 0 0 3px var(--green-soft); }
 .cell.n { text-align: right; min-width: 90px; }
+/* monto vacío: que se vea como campo para escribir */
+.cell.n:placeholder-shown { border: 1px dashed var(--line); }
+.cell.n:placeholder-shown:focus { border-style: solid; }
 .field { border-color: var(--line); background: var(--panel); }
 select.cell, select.field { cursor: pointer; }
 select option { background: var(--panel); color: var(--ink); }
@@ -181,6 +184,25 @@ label.lbl { display: flex; flex-direction: column; gap: 5px; font-size: 12px; fo
 .addrow .field { width: auto; flex: 1 1 140px; }
 .addrow .field.n { flex: 0 1 120px; text-align: right; }
 .addrow select.field { flex: 0 1 130px; }
+
+.addrow .quick { flex-basis: 100%; display: flex; gap: 6px; flex-wrap: wrap; }
+.addrow .quick .chip { border: 0; cursor: pointer; }
+.addrow .quick .chip:hover { background: var(--green-soft); color: var(--green-ink); }
+
+/* pestañas de bolsillo */
+.bolsillo-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 18px; }
+.bolsillo-tabs button { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); font-weight: 600; cursor: pointer; color: var(--ink-2); }
+.bolsillo-tabs button:hover { border-color: var(--ink); }
+.bolsillo-tabs button.on { background: #030000; color: #ebffff; border-color: #030000; }
+.bolsillo-tabs[aria-busy="true"] { opacity: .7; }
+.avatar.sm { width: 26px; height: 26px; font-size: 12px; }
+.avatar.gabriel, .owner.gabriel .avatar { --p: #4a8fd6; background: #4a8fd6; }
+.avatar.mel { background: #e879a6; }
+.avatar.hogar { background: var(--green); }
+.avatar.todos { background: var(--yellow); color: #030000; border-radius: 8px; }
+.card.bolsillo { border-top: 3px solid var(--p, var(--line)); }
+.card.bolsillo.gabriel { --p: #4a8fd6; } .card.bolsillo.mel { --p: #e879a6; } .card.bolsillo.hogar { --p: var(--green); }
+.card.bolsillo .card-head h2 { font-size: 17px; }
 
 /* progress */
 .bar { height: 8px; background: var(--line-2); border-radius: 99px; overflow: hidden; position: relative; }
@@ -324,4 +346,5 @@ label.lbl { display: flex; flex-direction: column; gap: 5px; font-size: 12px; fo
   .donut-list { width: 100%; }
   .form-grid { grid-template-columns: 1fr; }
   .owner-stats { margin-left: 0; gap: 16px; }
+  .bolsillo-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

@@ -75,7 +75,7 @@ export default async function AnalisisMes({ params }: PageProps<"/analisis/[mes]
           <div className="s" style={{ marginTop: 6 }}>tasa {pct(tasaAhorro(t, "r"))} · plan {pct(tasaAhorro(t, "e"))}</div>
         </div>
         <div className={"kpi " + (porColocar(t, "r") < 0 ? "black" : "accent")}>
-          <div className="l">Por colocar (real)</div><div className="v">{money(porColocar(t, "r"))}</div>
+          <div className="l">{vista === "hogar" ? "Al fondo hogar (real)" : "Por colocar (real)"}</div><div className="v">{money(porColocar(t, "r"))}</div>
           <div className="s">{porColocar(t, "r") < 0 ? "usaste más de lo que entró" : "ingresos − todo lo usado"} · plan {money(porColocar(t, "e"))}</div>
         </div>
       </div>

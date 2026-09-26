@@ -174,7 +174,6 @@ const PLANTILLA: [Persona, Tipo, string][] = [
     [p, "gasto_variable", "Gastos personales"],
     [p, "gasto_variable", "Transporte"],
   ]),
-  ["hogar", "ahorro", "Fondo de emergencia del hogar"],
   ["hogar", "gasto_fijo", "Renta"],
   ["hogar", "gasto_fijo", "Servicios (luz, agua, internet)"],
   ["hogar", "gasto_variable", "Supermercado"],
