@@ -94,6 +94,9 @@ export default function BudgetEditor(props: Props) {
                   <span className="muted small num">{pct(tot.r / tot.e)}</span>
                 </div>
               )}
+              {rows.length === 0 && !(tp.k === "ingreso" && aportes.length) && !(tp.k === "ahorro" && vista === "hogar") ? (
+                <div className="empty-row">Nada todavía</div>
+              ) : (
               <div className="scroll">
                 <table>
                   <thead>
@@ -113,9 +116,6 @@ export default function BudgetEditor(props: Props) {
                         <td><span className="chip">auto</span></td>
                       </tr>
                     ))}
-                    {rows.length === 0 && !(tp.k === "ingreso" && aportes.length) && !(tp.k === "ahorro" && vista === "hogar") && (
-                      <tr><td colSpan={5} className="t muted small">Nada todavía</td></tr>
-                    )}
                     {rows.map((p) => {
                       const r = realDe(p, gasto);
                       const df = p.estimado == null && r == null ? null : sign * ((Number(r) || 0) - (Number(p.estimado) || 0));
@@ -164,6 +164,7 @@ export default function BudgetEditor(props: Props) {
                   </tbody>
                 </table>
               </div>
+              )}
               <AddRow
                 anio={anio}
                 mes={mes}
@@ -265,6 +266,7 @@ function Provisiones({ anio, mes, persona, provisiones, total, delIngreso }: {
         {total.e > 0 && delIngreso(total.e) && <span className="chip">{delIngreso(total.e)}</span>}
         <span className="right num"><b>{money(base ? total.e : total.r)}</b>{!base && <span className="muted small"> / {money(total.e)}</span>}</span>
       </div>
+      {provisiones.length === 0 ? <div className="empty-row">Nada todavía</div> : (
       <div className="scroll">
         <table>
           <thead>
@@ -278,7 +280,6 @@ function Provisiones({ anio, mes, persona, provisiones, total, delIngreso }: {
             </tr>
           </thead>
           <tbody>
-            {provisiones.length === 0 && <tr><td colSpan={6} className="t muted small">Nada todavía</td></tr>}
             {provisiones.map((p) => (
               <tr key={p.id}>
                 <td className="name-col">
@@ -319,6 +320,7 @@ function Provisiones({ anio, mes, persona, provisiones, total, delIngreso }: {
           </tbody>
         </table>
       </div>
+      )}
       <form
         className="addrow"
         onSubmit={(e) => {

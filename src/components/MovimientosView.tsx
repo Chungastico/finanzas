@@ -32,7 +32,7 @@ export default function MovimientosView({ anio, mes, vista, movimientos, categor
             <h2>Movimientos</h2><span className="hint">{movimientos.length}</span>
             <span className="right num"><b>{money(sum(movimientos, (m) => m.cantidad))}</b></span>
           </div>
-          {movimientos.length === 0 ? <p className="muted small">Sin movimientos este mes.</p> : (
+          {movimientos.length === 0 ? <div className="empty-row">Nada todavía</div> : (
             <div className="scroll">
               <table>
                 <thead><tr><th>Fecha</th><th>Categoría</th>{vista === "todos" && <th>Quién</th>}<th>Nota</th><th className="n">Monto</th><th /></tr></thead>
@@ -58,7 +58,7 @@ export default function MovimientosView({ anio, mes, vista, movimientos, categor
 
       <section className="card" style={{ alignSelf: "start" }}>
         <div className="card-head"><h2>Por categoría</h2></div>
-        {resumen.length === 0 ? <p className="muted small">Agrega gastos variables a tu presupuesto para ver el avance.</p> : resumen.map((x) => (
+        {resumen.length === 0 ? <div className="empty-row">Nada todavía</div> : resumen.map((x) => (
           <div key={x.n} style={{ padding: "8px 0", borderBottom: "1px solid var(--line-2)" }}>
             <div style={{ display: "flex", marginBottom: 6, gap: 8 }}>
               <b>{x.n}</b>

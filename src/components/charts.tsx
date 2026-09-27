@@ -139,7 +139,7 @@ export function PlanVsReal({ totales }: { totales: Totales }) {
             <div className="vals">
               {money(r)} <span className="muted">/ {money(e)}</span>
               <small className={e || r ? (d >= 0 ? "pos" : "neg") : ""}>
-                {e || r ? `${d >= 0 ? "+" : "−"}${money(Math.abs(d))} ${d >= 0 ? (c === "ingreso" ? "arriba" : "disponible") : c === "ingreso" ? "abajo" : "excedido"}` : "sin datos"}
+                {e || r ? `${d >= 0 ? "+" : "−"}${money(Math.abs(d))} ${d >= 0 ? (c === "ingreso" ? "arriba" : "disponible") : c === "ingreso" ? "abajo" : "excedido"}` : ""}
               </small>
             </div>
           </div>

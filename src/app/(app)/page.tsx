@@ -128,132 +128,129 @@ export default async function Dashboard() {
       </div>
 
       <div className="grid cols-main">
-        <section className="card">
-          <div className="card-head"><h2>Ingresos vs. dinero usado</h2></div>
-          <MonthlyChart data={chart} />
-        </section>
-
-        <section className="card">
-          <div className="card-head">
-            <h2>Alertas de {MESES[mesActual - 1]}</h2>
-            <span className="right"><Link className="btn sm" href={`/analisis/${mesActual}`}>Análisis</Link></span>
-          </div>
-          {excedidas.length === 0 ? (
-            <div className="empty" style={{ padding: 20 }}>
-              <CheckCircle2 size={28} color="var(--green)" />
-              <h3>Todo dentro del plan</h3>
-              <span className="small">Ninguna categoría se ha excedido este mes.</span>
-            </div>
-          ) : (
-            <div className="list">
-              {excedidas.slice(0, 6).map(({ p, r }) => (
-                <div className="row" key={p.id}>
-                  <AlertTriangle size={16} color="var(--red)" />
-                  <span><b>{p.nombre}</b> <span className="muted small">· {personaNombre(p.persona)}</span></span>
-                  <span className="amt neg">+{money(r - (p.estimado ?? 0))}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="card">
-          <div className="card-head"><h2>Plan vs. real · {anio}</h2></div>
-          <PlanVsReal totales={año} />
-        </section>
-
-        <section className="card">
-          <div className="card-head">
-            <h2>Objetivos</h2>
-            <span className="right"><Link className="btn sm" href="/objetivos">Ver todos</Link></span>
-          </div>
-          {activos.length === 0 ? (
-            <div className="empty" style={{ padding: 16 }}>
-              <span className="small">Aún no tienes objetivos.</span>
-              <div style={{ marginTop: 10 }}><Link className="btn primary sm" href="/objetivos"><Plus size={14} /> Crear objetivo</Link></div>
-            </div>
-          ) : (
-            <div className="list">
-              {activos.slice(0, 5).map((o) => {
-                const pr = proyeccion(o);
-                return (
-                  <div key={o.id} style={{ padding: "9px 0", borderBottom: "1px solid var(--line-2)" }}>
-                    <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
-                      <b>{o.nombre}</b>
-                      <span className={"chip " + ESTADO_CHIP[pr.estado]}>
-                        {ESTADO_TXT[pr.estado]}
-                      </span>
-                      <span className="num small" style={{ marginLeft: "auto" }}>{pct(pr.pct)}</span>
-                    </div>
-                    <Bar value={o.acumulado} max={o.monto_meta} />
-                    <div className="muted small" style={{ marginTop: 4 }}>{money(o.acumulado)} de {money(o.monto_meta)}</div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
-
-        <section className="card">
-          <div className="card-head">
-            <h2>Provisiones</h2>
-            <span className="right"><Link className="btn sm" href="/presupuesto">Abrir</Link></span>
-          </div>
-          <div className="goal amounts" style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
-            <strong style={{ fontSize: 22 }}>{money(provAcum)}</strong><span className="muted">de {money(provMeta)} al año</span>
-          </div>
-          <Bar value={provAcum} max={provMeta} lg />
-          <div className="list" style={{ marginTop: 10 }}>
-            {provisiones.slice(0, 4).map((p) => (
-              <div className="row" key={p.id}>
-                <span>{p.nombre}</span>
-                <span className="amt">{money(p.provisionado - p.usado)} <span className="muted small">disp.</span></span>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {(vista === "todos" || vista === "hogar") && (
+        <div className="stack">
           <section className="card">
-            <div className="card-head"><h2>Fondo hogar</h2></div>
-            <div className="goal amounts" style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-              <strong style={{ fontSize: 26 }} className={saldoHogar < 0 ? "neg" : ""}>{money(saldoHogar)}</strong>
-              <span className="muted small">a {MESES[mesActual - 1].toLowerCase()}</span>
-            </div>
-            <div className="list">
-              {bolsillos.filter((b) => b.persona !== "hogar").map((b) => (
-                <div className="row" key={b.persona}>
-                  <span className={`dot ${b.persona}`} /> Aportado por {personaNombre(b.persona)}
-                  <span className="amt">{money(b.aportes)}</span>
-                </div>
-              ))}
-              <div className="row"><b>Aportes del año</b><span className="amt">{money(aportesAño.r)} <span className="muted small">/ {money(aportesAño.e)}</span></span></div>
-            </div>
+            <div className="card-head"><h2>Ingresos vs. dinero usado</h2></div>
+            <MonthlyChart data={chart} />
           </section>
-        )}
 
-        {vista === "todos" && (
           <section className="card">
-            <div className="card-head"><h2>Bolsillos</h2></div>
-            {bolsillos.length === 0 ? (
-              <p className="muted small">Sin datos todavía.</p>
+            <div className="card-head"><h2>Plan vs. real · {anio}</h2></div>
+            <PlanVsReal totales={año} />
+          </section>
+
+          {vista === "todos" && (
+            <section className="card">
+              <div className="card-head"><h2>Bolsillos</h2></div>
+              {bolsillos.length === 0 ? (
+                <div className="empty-row">Nada todavía</div>
+              ) : (
+                <table>
+                  <thead><tr><th>Bolsillo</th><th className="n">Entra</th><th className="n">Sale</th><th className="n">Balance</th></tr></thead>
+                  <tbody>
+                    {bolsillos.map((p) => (
+                      <tr key={p.persona}>
+                        <td className="t"><span className={`dot ${p.persona}`} /> {personaNombre(p.persona)}</td>
+                        <td className="n">{money(p.ingresos)}</td>
+                        <td className="n">{money(p.usado)}</td>
+                        <td className={"n " + (p.ingresos - p.usado < 0 ? "neg" : "pos")}>{money(p.ingresos - p.usado)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </section>
+          )}
+        </div>
+        <div className="stack">
+          <section className="card">
+            <div className="card-head">
+              <h2>Alertas de {MESES[mesActual - 1]}</h2>
+              <span className="right"><Link className="btn sm" href={`/analisis/${mesActual}`}>Análisis</Link></span>
+            </div>
+            {excedidas.length === 0 ? (
+              <div className="ok-row"><CheckCircle2 size={18} /> Todo dentro del plan</div>
             ) : (
-              <table>
-                <thead><tr><th>Bolsillo</th><th className="n">Entra</th><th className="n">Sale</th><th className="n">Balance</th></tr></thead>
-                <tbody>
-                  {bolsillos.map((p) => (
-                    <tr key={p.persona}>
-                      <td className="t"><span className={`dot ${p.persona}`} /> {personaNombre(p.persona)}</td>
-                      <td className="n">{money(p.ingresos)}</td>
-                      <td className="n">{money(p.usado)}</td>
-                      <td className={"n " + (p.ingresos - p.usado < 0 ? "neg" : "pos")}>{money(p.ingresos - p.usado)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div className="list">
+                {excedidas.slice(0, 6).map(({ p, r }) => (
+                  <div className="row" key={p.id}>
+                    <AlertTriangle size={16} color="var(--red)" />
+                    <span><b>{p.nombre}</b> <span className="muted small">· {personaNombre(p.persona)}</span></span>
+                    <span className="amt neg">+{money(r - (p.estimado ?? 0))}</span>
+                  </div>
+                ))}
+              </div>
             )}
           </section>
-        )}
+
+          {(vista === "todos" || vista === "hogar") && (
+            <section className="card">
+              <div className="card-head"><h2>Fondo hogar</h2></div>
+              <div className="goal amounts" style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+                <strong style={{ fontSize: 26 }} className={saldoHogar < 0 ? "neg" : ""}>{money(saldoHogar)}</strong>
+                <span className="muted small">a {MESES[mesActual - 1].toLowerCase()}</span>
+              </div>
+              <div className="list">
+                {bolsillos.filter((b) => b.persona !== "hogar").map((b) => (
+                  <div className="row" key={b.persona}>
+                    <span className={`dot ${b.persona}`} /> Aportado por {personaNombre(b.persona)}
+                    <span className="amt">{money(b.aportes)}</span>
+                  </div>
+                ))}
+                <div className="row"><b>Aportes del año</b><span className="amt">{money(aportesAño.r)} <span className="muted small">/ {money(aportesAño.e)}</span></span></div>
+              </div>
+            </section>
+          )}
+
+          <section className="card">
+            <div className="card-head">
+              <h2>Objetivos</h2>
+              <span className="right"><Link className="btn sm" href="/objetivos">Ver todos</Link></span>
+            </div>
+            {activos.length === 0 ? (
+              <div className="empty-row"><Link className="btn primary sm" href="/objetivos"><Plus size={14} /> Crear objetivo</Link></div>
+            ) : (
+              <div className="list">
+                {activos.slice(0, 5).map((o) => {
+                  const pr = proyeccion(o);
+                  return (
+                    <div key={o.id} style={{ padding: "9px 0", borderBottom: "1px solid var(--line-2)" }}>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
+                        <b>{o.nombre}</b>
+                        <span className={"chip " + ESTADO_CHIP[pr.estado]}>
+                          {ESTADO_TXT[pr.estado]}
+                        </span>
+                        <span className="num small" style={{ marginLeft: "auto" }}>{pct(pr.pct)}</span>
+                      </div>
+                      <Bar value={o.acumulado} max={o.monto_meta} />
+                      <div className="muted small" style={{ marginTop: 4 }}>{money(o.acumulado)} de {money(o.monto_meta)}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          <section className="card">
+            <div className="card-head">
+              <h2>Provisiones</h2>
+              <span className="right"><Link className="btn sm" href="/presupuesto">Abrir</Link></span>
+            </div>
+            <div className="goal amounts" style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
+              <strong style={{ fontSize: 22 }}>{money(provAcum)}</strong><span className="muted">de {money(provMeta)} al año</span>
+            </div>
+            <Bar value={provAcum} max={provMeta} lg />
+            <div className="list" style={{ marginTop: 10 }}>
+              {provisiones.slice(0, 4).map((p) => (
+                <div className="row" key={p.id}>
+                  <span>{p.nombre}</span>
+                  <span className="amt">{money(p.provisionado - p.usado)} <span className="muted small">disp.</span></span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+        </div>
       </div>
     </div>
   );

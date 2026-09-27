@@ -33,8 +33,10 @@ export default async function PresupuestoMes({ params }: PageProps<"/presupuesto
           {mes > 0 && <Link className="btn" href={`/analisis/${mes}`}><BarChart3 size={15} /> Ver análisis</Link>}
         </div>
       </div>
-      <MonthStrip href="/presupuesto" mes={mes} anio={anio} base />
-      <BolsilloTabs vista={vista} />
+      <div className="toolbar">
+        <MonthStrip href="/presupuesto" mes={mes} anio={anio} base />
+        <BolsilloTabs vista={vista} />
+      </div>
       {vista === "todos"
         ? <Resumen anio={anio} mes={mes} baseVacia={base.n === 0} />
         : <Editor anio={anio} mes={mes} vista={vista} baseVacia={base.n === 0} anioAnteriorTienePlan={prev.n > 0} />}

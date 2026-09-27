@@ -79,89 +79,93 @@ export default async function AnalisisMes({ params }: PageProps<"/analisis/[mes]
       </div>
 
       <div className="grid cols-2">
-        <section className="card">
-          <div className="card-head"><h2>Plan vs. real</h2></div>
-          <PlanVsReal totales={t} />
-        </section>
+        <div className="stack">
+          <section className="card">
+            <div className="card-head"><h2>Plan vs. real</h2></div>
+            <PlanVsReal totales={t} />
+          </section>
 
-        <section className="card">
-          <div className="card-head"><h2>¿A dónde se fue el dinero?</h2></div>
-          <Donut totales={t} />
-        </section>
-
-        <section className="card">
-          <div className="card-head">
-            <h2>Gastos variables</h2><span className="hint">{d.movimientos.length} movimientos</span>
-            <span className="right"><Link className="btn sm" href={`/movimientos?mes=${mes}`}>Ver todos</Link></span>
-          </div>
-          {variables.length === 0 && extraPorCat.length === 0 && <p className="muted small">Sin gastos variables en el presupuesto de este mes.</p>}
-          <div className="list">
-            {variables.map(({ p, r }) => {
-              const e = p.estimado ?? 0;
-              return (
-                <div key={p.id} style={{ padding: "8px 0", borderBottom: "1px solid var(--line-2)" }}>
-                  <div style={{ display: "flex", gap: 8, marginBottom: 6, alignItems: "baseline" }}>
-                    <b>{p.nombre}</b>
-                    {vista === "todos" && <span className="muted small">{personaNombre(p.persona)}</span>}
-                    <span className="num" style={{ marginLeft: "auto" }}>
-                      <b className={r > e && e > 0 ? "neg" : ""}>{money(r)}</b> <span className="muted">/ {money(e)}</span>
-                    </span>
+          <section className="card">
+            <div className="card-head">
+              <h2>Gastos variables</h2><span className="hint">{d.movimientos.length} movimientos</span>
+              <span className="right"><Link className="btn sm" href={`/movimientos?mes=${mes}`}>Ver todos</Link></span>
+            </div>
+            {variables.length === 0 && extraPorCat.length === 0 && <div className="empty-row">Nada todavía</div>}
+            <div className="list">
+              {variables.map(({ p, r }) => {
+                const e = p.estimado ?? 0;
+                return (
+                  <div key={p.id} style={{ padding: "8px 0", borderBottom: "1px solid var(--line-2)" }}>
+                    <div style={{ display: "flex", gap: 8, marginBottom: 6, alignItems: "baseline" }}>
+                      <b>{p.nombre}</b>
+                      {vista === "todos" && <span className="muted small">{personaNombre(p.persona)}</span>}
+                      <span className="num" style={{ marginLeft: "auto" }}>
+                        <b className={r > e && e > 0 ? "neg" : ""}>{money(r)}</b> <span className="muted">/ {money(e)}</span>
+                      </span>
+                    </div>
+                    <Bar value={r} max={e || r} over={e > 0 && r > e} />
                   </div>
-                  <Bar value={r} max={e || r} over={e > 0 && r > e} />
+                );
+              })}
+              {extraPorCat.map(([c, v]) => (
+                <div className="row" key={c}>
+                  <span className="chip yellow">sin presupuesto</span><b>{c}</b>
+                  <span className="amt">{money(v)}</span>
                 </div>
-              );
-            })}
-            {extraPorCat.map(([c, v]) => (
-              <div className="row" key={c}>
-                <span className="chip yellow">sin presupuesto</span><b>{c}</b>
-                <span className="amt">{money(v)}</span>
+              ))}
+            </div>
+          </section>
+
+        </div>
+        <div className="stack">
+          <section className="card">
+            <div className="card-head"><h2>¿A dónde se fue el dinero?</h2></div>
+            <Donut totales={t} />
+          </section>
+
+          <section className="card">
+            <div className="card-head"><h2>vs. {MESES[prevMes - 1]}</h2></div>
+            <table>
+              <thead><tr><th>Categoría</th><th className="n">{MESES[prevMes - 1].slice(0, 3)}</th><th className="n">{MESES[mes - 1].slice(0, 3)}</th><th className="n">Cambio</th></tr></thead>
+              <tbody>
+                {(["ingreso", ...SALIDAS] as Cat[]).filter((c) => c !== "aporte" || t.aporte.e || t.aporte.r || tp.aporte.r).map((c) => (
+                  <tr key={c}>
+                    <td className="t"><Swatch c={c} /> {CAT_LABEL[c]}</td>
+                    <td className="n muted">{money(tp[c].r)}</td>
+                    <td className="n">{money(t[c].r)}</td>
+                    <td className="n"><Delta now={t[c].r} prev={tp[c].r} invert={c === "gasto_fijo" || c === "gasto_variable" || c === "deuda"} /></td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr><td>Usado total</td><td className="n">{money(salidas(tp, "r"))}</td><td className="n">{money(salidas(t, "r"))}</td><td /></tr>
+              </tfoot>
+            </table>
+          </section>
+
+        </div>
+      </div>
+      <section className="card" style={{ marginTop: 16 }}>
+        <div className="card-head"><h2>Últimos movimientos</h2></div>
+        {d.movimientos.length === 0 ? (
+          <div className="empty-row">Nada todavía</div>
+        ) : (
+          <div className="list">
+            {d.movimientos.slice(0, 8).map((m) => (
+              <div className="row" key={m.id}>
+                <span className="chip">{fechaCorta(m.fecha)}</span>
+                <b>{m.categoria}</b>
+                <span className="muted small">{m.notas}</span>
+                {vista === "todos" && <span className="muted small"><span className={`dot ${m.persona}`} /> {personaNombre(m.persona)}</span>}
+                <span className="amt">{money(m.cantidad)}</span>
               </div>
             ))}
+            {d.movimientos.length > 8 && (
+              <div className="muted small" style={{ paddingTop: 8 }}>y {d.movimientos.length - 8} más · total {money(sum(d.movimientos, (m) => m.cantidad))}</div>
+            )}
           </div>
-        </section>
-
-        <section className="card">
-          <div className="card-head"><h2>vs. {MESES[prevMes - 1]}</h2></div>
-          <table>
-            <thead><tr><th>Categoría</th><th className="n">{MESES[prevMes - 1].slice(0, 3)}</th><th className="n">{MESES[mes - 1].slice(0, 3)}</th><th className="n">Cambio</th></tr></thead>
-            <tbody>
-              {(["ingreso", ...SALIDAS] as Cat[]).filter((c) => c !== "aporte" || t.aporte.e || t.aporte.r || tp.aporte.r).map((c) => (
-                <tr key={c}>
-                  <td className="t"><Swatch c={c} /> {CAT_LABEL[c]}</td>
-                  <td className="n muted">{money(tp[c].r)}</td>
-                  <td className="n">{money(t[c].r)}</td>
-                  <td className="n"><Delta now={t[c].r} prev={tp[c].r} invert={c === "gasto_fijo" || c === "gasto_variable" || c === "deuda"} /></td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr><td>Usado total</td><td className="n">{money(salidas(tp, "r"))}</td><td className="n">{money(salidas(t, "r"))}</td><td /></tr>
-            </tfoot>
-          </table>
-        </section>
-
-        <section className="card span-2">
-          <div className="card-head"><h2>Últimos movimientos</h2></div>
-          {d.movimientos.length === 0 ? (
-            <p className="muted small">Todavía no registras gastos este mes.</p>
-          ) : (
-            <div className="list">
-              {d.movimientos.slice(0, 8).map((m) => (
-                <div className="row" key={m.id}>
-                  <span className="chip">{fechaCorta(m.fecha)}</span>
-                  <b>{m.categoria}</b>
-                  <span className="muted small">{m.notas}</span>
-                  {vista === "todos" && <span className="muted small"><span className={`dot ${m.persona}`} /> {personaNombre(m.persona)}</span>}
-                  <span className="amt">{money(m.cantidad)}</span>
-                </div>
-              ))}
-              {d.movimientos.length > 8 && (
-                <div className="muted small" style={{ paddingTop: 8 }}>y {d.movimientos.length - 8} más · total {money(sum(d.movimientos, (m) => m.cantidad))}</div>
-              )}
-            </div>
-          )}
-        </section>
-      </div>
+        )}
+      </section>
     </div>
   );
 }
