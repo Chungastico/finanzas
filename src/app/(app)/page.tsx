@@ -7,7 +7,7 @@ import { q } from "@/lib/db";
 import { ESTADO_CHIP, ESTADO_TXT, gastoPorCategoria, porColocar, proyeccion, realDe, salidas, tasaAhorro, totalesDeResumen } from "@/lib/calc";
 import { getBolsillos, getMes, getObjetivos, getProvisiones, getResumen } from "@/lib/data";
 import { money, pct, sum } from "@/lib/format";
-import { MESES, SALIDAS, VISTAS, personaNombre, type ResumenRow } from "@/lib/types";
+import { MESES, SALIDAS, personaNombre, type ResumenRow } from "@/lib/types";
 import { getContexto } from "@/lib/vista";
 
 export default async function Dashboard() {
@@ -61,7 +61,6 @@ export default async function Dashboard() {
     <div className="page">
       <div className="page-head">
         <div>
-          <div className="eyebrow"><span className={`dot ${vista}`} /> {VISTAS.find((v) => v.k === vista)?.t} · {anio}</div>
           <h1>Dashboard</h1>
         </div>
         <div className="actions">
@@ -72,13 +71,12 @@ export default async function Dashboard() {
 
       {(!hayDatos || planVacio) && (
         <div className="card" style={{ marginBottom: 16 }}>
-          <div className="card-head"><h2>Empecemos</h2><span className="hint">Cómo funciona: Gabriel y Mel manejan lo suyo y cada uno aporta al fondo del Hogar</span></div>
+          <div className="card-head"><h2>Empecemos</h2></div>
           <div className="steps">
             <div className="step">
               <span className="n">1</span>
               <span>
                 <b>Crea la estructura</b>
-                <span className="muted small">Ingresos, aporte al hogar y gastos de Gabriel y Mel, más renta, súper y servicios del Hogar.</span>
                 {planVacio ? (
                   <span style={{ display: "block", marginTop: 8 }}>
                     <ActionButton className="btn primary sm" ok="Estructura creada" action={crearPlantilla.bind(null, anio)}><Plus size={14} /> Crear estructura sugerida</ActionButton>
@@ -86,8 +84,8 @@ export default async function Dashboard() {
                 ) : <span className="chip green" style={{ marginTop: 8 }}>Lista</span>}
               </span>
             </div>
-            <Link className="step" href="/presupuesto/base"><span className="n">2</span><span><b>Pon montos al plan base</b><span className="muted small">Cuánto gana cada uno, cuánto aporta al hogar y cuánto gasta el hogar.</span></span></Link>
-            <Link className="step" href={`/presupuesto/${mesActual}`}><span className="n">3</span><span><b>Aplica el plan al mes</b><span className="muted small">Registra movimientos y define objetivos para ver plan vs. real.</span></span></Link>
+            <Link className="step" href="/presupuesto/base"><span className="n">2</span><span><b>Pon montos al plan base</b></span></Link>
+            <Link className="step" href={`/presupuesto/${mesActual}`}><span className="n">3</span><span><b>Aplica el plan al mes</b></span></Link>
           </div>
         </div>
       )}
@@ -101,12 +99,12 @@ export default async function Dashboard() {
         <div className="kpi accent">
           <div className="l">Por colocar · {MESES[mesActual - 1]}</div>
           <div className="v">{money(porColocar(esteMes, "e"))}</div>
-          <div className="s">del plan del mes sin asignar</div>
+          
         </div>
         <div className="kpi" style={{ ["--k" as string]: "var(--green)" }}>
           <div className="l"><TrendingUp size={14} /> Tasa de ahorro</div>
           <div className="v">{pct(tasaAhorro(año, "r"))}</div>
-          <div className="s">plan: {pct(tasaAhorro(año, "e"))} · ahorro + provisiones</div>
+          <div className="s">plan {pct(tasaAhorro(año, "e"))}</div>
         </div>
       </div>
 
@@ -117,10 +115,10 @@ export default async function Dashboard() {
         <div className="kpi" style={{ ["--k" as string]: "var(--c-gasto_variable)" }}>
           <div className="l">Gastos</div>
           <div className="v">{money(año.gasto_fijo.r + año.gasto_variable.r + año.deuda.r)}</div>
-          <div className="s">fijos + variables + deudas</div>
+          
         </div>
         <div className="kpi" style={{ ["--k" as string]: "var(--c-ahorro)" }}>
-          <div className="l">Ahorrado</div><div className="v">{money(año.ahorro.r + año.provision.r)}</div><div className="s">ahorros + provisiones</div>
+          <div className="l">Ahorrado</div><div className="v">{money(año.ahorro.r + año.provision.r)}</div>
         </div>
         <div className="kpi" style={{ ["--k" as string]: "var(--yellow)" }}>
           <div className="l"><Target size={14} /> Objetivos activos</div>
@@ -131,7 +129,7 @@ export default async function Dashboard() {
 
       <div className="grid cols-main">
         <section className="card">
-          <div className="card-head"><h2>Ingresos vs. dinero usado</h2><span className="hint">Real por mes · {anio}</span></div>
+          <div className="card-head"><h2>Ingresos vs. dinero usado</h2></div>
           <MonthlyChart data={chart} />
         </section>
 
@@ -199,7 +197,7 @@ export default async function Dashboard() {
         <section className="card">
           <div className="card-head">
             <h2>Provisiones</h2>
-            <span className="right"><Link className="btn sm" href="/provisiones">Abrir</Link></span>
+            <span className="right"><Link className="btn sm" href="/presupuesto">Abrir</Link></span>
           </div>
           <div className="goal amounts" style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
             <strong style={{ fontSize: 22 }}>{money(provAcum)}</strong><span className="muted">de {money(provMeta)} al año</span>
@@ -217,12 +215,11 @@ export default async function Dashboard() {
 
         {(vista === "todos" || vista === "hogar") && (
           <section className="card">
-            <div className="card-head"><h2>Fondo hogar</h2><span className="hint">se llena solo con lo que sobra</span></div>
+            <div className="card-head"><h2>Fondo hogar</h2></div>
             <div className="goal amounts" style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
               <strong style={{ fontSize: 26 }} className={saldoHogar < 0 ? "neg" : ""}>{money(saldoHogar)}</strong>
               <span className="muted small">a {MESES[mesActual - 1].toLowerCase()}</span>
             </div>
-            <p className="muted small" style={{ margin: "4px 0 12px" }}>Cada mes, lo que sobra de los aportes después de los gastos, ahorros y provisiones del hogar se suma aquí automáticamente.</p>
             <div className="list">
               {bolsillos.filter((b) => b.persona !== "hogar").map((b) => (
                 <div className="row" key={b.persona}>
@@ -237,7 +234,7 @@ export default async function Dashboard() {
 
         {vista === "todos" && (
           <section className="card">
-            <div className="card-head"><h2>Bolsillos</h2><span className="hint">Real del año</span></div>
+            <div className="card-head"><h2>Bolsillos</h2></div>
             {bolsillos.length === 0 ? (
               <p className="muted small">Sin datos todavía.</p>
             ) : (
@@ -255,7 +252,6 @@ export default async function Dashboard() {
                 </tbody>
               </table>
             )}
-            <p className="muted small" style={{ margin: "10px 0 0" }}>En Gabriel y Mel, el aporte al hogar cuenta como salida; en Hogar, como entrada.</p>
           </section>
         )}
       </div>

@@ -1,25 +1,29 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Copy, Trash2, Plus, Link2 } from "lucide-react";
+import { Copy, Trash2, Plus, Target, X } from "lucide-react";
 import {
-  agregarPartida, aplicarPlanBase, borrarPartida, copiarPlanDeAnio, crearPlantilla, editarPartida, guardarAporteProvision,
+  agregarPartida, agregarProvision, agregarUso, aplicarPlanBase, borrarPartida, borrarProvision, copiarPlanDeAnio,
+  crearMetaParaPartida, crearPlantilla, editarPartida, editarProvision, guardarAporteProvision,
 } from "@/lib/actions";
-import { gastoPorCategoria, porColocar, realDe, sinPresupuesto, totalesMes } from "@/lib/calc";
-import { diffCls, fmt, money, parseNum, sum } from "@/lib/format";
-import { MESES, TIPOS, personaNombre, type AporteHogar, type Movimiento, type Partida, type Persona, type ProvisionMes, type Tipo, type Vista } from "@/lib/types";
-import { color } from "./charts";
-import { ActionButton, NumCell, PersonaCell, SelectCell, TextCell, personaOptions, toast, useSave } from "./fields";
+import { gastoPorCategoria, porColocar, proyeccion, realDe, sinPresupuesto, tasaAhorro, totalesMes } from "@/lib/calc";
+import { diffCls, fechaMes, fmt, money, parseNum, pct, sum } from "@/lib/format";
+import {
+  MESES, TIPOS, personaNombre, type AporteHogar, type Movimiento, type Objetivo, type Partida, type Persona,
+  type ProvisionMes, type Tipo,
+} from "@/lib/types";
+import { Bar, color } from "./charts";
+import { ActionButton, NumCell, SelectCell, TextCell, toast, useSave } from "./fields";
 
 type Props = {
   anio: number;
   mes: number; // 0 = plan base
-  vista: Vista;
+  vista: Persona;
   partidas: Partida[];
   movimientos: Movimiento[];
   provisiones: ProvisionMes[];
   aportes: AporteHogar[];
-  objetivos: { id: number; nombre: string }[];
+  objetivos: Objetivo[];
   baseVacia: boolean;
   anioAnteriorTienePlan: boolean;
 };
@@ -28,27 +32,31 @@ export default function BudgetEditor(props: Props) {
   const { anio, mes, vista, partidas, movimientos, provisiones, aportes, objetivos } = props;
   const base = mes === 0;
   const t = totalesMes(partidas, movimientos, provisiones, aportes);
-  // El aporte al hogar solo existe en las vistas de Gabriel y Mel
-  const tipos = TIPOS.filter((tp) => tp.k !== "aporte" || vista === "gabriel" || vista === "mel");
+  // El aporte al hogar solo existe en los presupuestos de Gabriel y Mel
+  const tipos = TIPOS.filter((tp) => tp.k !== "aporte" || vista !== "hogar");
   const pcE = porColocar(t, "e"), pcR = porColocar(t, "r");
   const gasto = gastoPorCategoria(movimientos);
   const extra = sinPresupuesto(partidas, movimientos);
-  const defaultPersona: Persona = vista === "todos" ? "hogar" : vista;
+  const delIngreso = (v: number) => (t.ingreso.e > 0 ? pct(v / t.ingreso.e) : null);
+  const objetivoDe = (id: number | null) => objetivos.find((o) => o.id === id);
 
   return (
     <>
       <div className="summary-bar">
-        <span className="pill">Ingresos plan <b>{money(t.ingreso.e)}</b></span>
-        <span className="pill">Asignado <b>{money(t.ingreso.e - pcE)}</b></span>
-        <span className={"pill " + (pcE < 0 ? "red" : "accent")}>{vista === "hogar" ? (pcE < 0 ? "Faltan en el hogar" : "Va al fondo hogar") : "Por colocar"} <b>{money(pcE)}</b></span>
-        {!base && <span className={"pill " + (pcR < 0 ? "red" : "")}>{vista === "hogar" ? "Al fondo hogar (real)" : "Por colocar real"} <b>{money(pcR)}</b></span>}
+        <span className="pill">Ingresos <b>{money(t.ingreso.e)}</b></span>
+        <span className="pill">Asignado <b>{money(t.ingreso.e - pcE)}</b> {delIngreso(t.ingreso.e - pcE)}</span>
+        <span className={"pill " + (pcE < 0 ? "red" : "accent")}>
+          {vista === "hogar" ? (pcE < 0 ? "Faltan" : "Al fondo hogar") : "Por colocar"} <b>{money(pcE)}</b>
+        </span>
+        <span className="pill">Tasa de ahorro <b>{pct(tasaAhorro(t, base ? "e" : "r"))}</b></span>
+        {!base && <span className={"pill " + (pcR < 0 ? "red" : "")}>Real <b>{money(pcR)}</b></span>}
         <span style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
           {!base && (
             <ActionButton
               className="btn primary"
               ok="Plan base aplicado"
               action={() => aplicarPlanBase(anio, mes)}
-              confirm={`Se copiarán los montos del plan base a ${MESES[mes - 1]}. Las partidas con el mismo nombre se actualizan. ¿Continuar?`}
+              confirm={`Se copiarán los montos del plan base a ${MESES[mes - 1]}. ¿Continuar?`}
             >
               <Copy size={15} /> Aplicar plan base
             </ActionButton>
@@ -70,29 +78,27 @@ export default function BudgetEditor(props: Props) {
         {tipos.map((tp) => {
           const rows = partidas.filter((p) => p.tipo === tp.k);
           const calc = tp.k === "gasto_variable";
-          const conObjetivo = tp.k === "ahorro" || tp.k === "deuda";
+          const conMeta = tp.k === "ahorro" || tp.k === "deuda";
           const sign = tp.k === "ingreso" ? 1 : -1;
+          const tot = t[tp.k];
           return (
-            <section className="card" key={tp.k} style={{ borderTop: `3px solid ${color(tp.k === "ingreso" ? "ingreso" : tp.k)}` }}>
+            <section className="card" key={tp.k} style={{ borderTop: `3px solid ${color(tp.k)}` }}>
               <div className="card-head">
                 <h2>{tp.t}</h2>
-                <span className="right num"><b>{money(base ? t[tp.k].e : t[tp.k].r)}</b>{!base && <span className="muted small"> / {money(t[tp.k].e)}</span>}</span>
+                {tp.k !== "ingreso" && tot.e > 0 && delIngreso(tot.e) && <span className="chip">{delIngreso(tot.e)}</span>}
+                <span className="right num"><b>{money(base ? tot.e : tot.r)}</b>{!base && <span className="muted small"> / {money(tot.e)}</span>}</span>
               </div>
-              <p className="muted small" style={{ margin: "-8px 0 10px" }}>
-                {tp.k === "ingreso"
-                  ? vista === "hogar"
-                    ? "Los aportes de Gabriel y Mel entran solos; se editan en el presupuesto de cada uno."
-                    : base
-                      ? "Salario base y otros ingresos que se repiten cada mes."
-                      : "Lo que entró este mes. ¿Un bono, venta o trabajo extra? Agrégalo abajo: solo cuenta en este mes."
-                  : tp.ayuda}
-              </p>
+              {!base && tot.e > 0 && (
+                <div className="sec-bar" title={`${pct(tot.r / tot.e)} del plan`}>
+                  <Bar value={tot.r} max={tot.e} over={tp.k !== "ingreso" && tot.r > tot.e} />
+                  <span className="muted small num">{pct(tot.r / tot.e)}</span>
+                </div>
+              )}
               <div className="scroll">
                 <table>
                   <thead>
                     <tr>
                       <th>{tp.col}</th>
-                      {vista === "todos" && <th>Quién</th>}
                       <th className="n">Plan</th>
                       {!base && <><th className="n">Real</th><th className="n">Dif.</th></>}
                       <th />
@@ -108,7 +114,7 @@ export default function BudgetEditor(props: Props) {
                       </tr>
                     ))}
                     {rows.length === 0 && !(tp.k === "ingreso" && aportes.length) && !(tp.k === "ahorro" && vista === "hogar") && (
-                      <tr><td colSpan={6} className="t muted small">Nada todavía — agrega abajo.</td></tr>
+                      <tr><td colSpan={5} className="t muted small">Nada todavía</td></tr>
                     )}
                     {rows.map((p) => {
                       const r = realDe(p, gasto);
@@ -117,25 +123,15 @@ export default function BudgetEditor(props: Props) {
                         <tr key={p.id}>
                           <td className="name-col">
                             <TextCell label={tp.col} value={p.nombre} onSave={(v) => editarPartida(p.id, "nombre", v)} />
-                            {conObjetivo && (
-                              <div style={{ display: "flex", alignItems: "center", gap: 4, paddingLeft: 8 }}>
-                                <Link2 size={12} className="muted" />
-                                <SelectCell
-                                  label="Objetivo"
-                                  className="small"
-                                  value={p.objetivo_id ? String(p.objetivo_id) : ""}
-                                  options={[{ v: "", t: "Sin objetivo" }, ...objetivos.map((o) => ({ v: String(o.id), t: o.nombre }))]}
-                                  onSave={(v) => editarPartida(p.id, "objetivo_id", v)}
-                                />
-                              </div>
+                            {conMeta && (
+                              <Meta partida={p} objetivo={objetivoDe(p.objetivo_id)} objetivos={objetivos} />
                             )}
                           </td>
-                          {vista === "todos" && <td style={{ width: 130 }}><PersonaCell value={p.persona} onSave={(v) => editarPartida(p.id, "persona", v)} /></td>}
                           <td className="n"><NumCell label="Plan" value={p.estimado} onSave={(v) => editarPartida(p.id, "estimado", v)} /></td>
                           {!base && (
                             <>
                               <td className="n">
-                                {calc ? <span className="t" style={{ display: "block" }} title="Suma de movimientos">{fmt(r)}</span>
+                                {calc ? <span className="t" style={{ display: "block" }}>{fmt(r)}</span>
                                   : <NumCell label="Real" value={p.real} onSave={(v) => editarPartida(p.id, "real", v)} />}
                               </td>
                               <td className={"n " + diffCls(df)}>{fmt(df)}</td>
@@ -151,7 +147,7 @@ export default function BudgetEditor(props: Props) {
                     })}
                     {tp.k === "ahorro" && vista === "hogar" && (
                       <tr>
-                        <td className="t"><b>Fondo hogar</b> <span className="muted small">· lo que sobra se guarda solo</span></td>
+                        <td className="t"><b>Fondo hogar</b></td>
                         <td className={"n t " + (pcE < 0 ? "neg" : "")}>{fmt(pcE)}</td>
                         {!base && <><td className={"n t " + (pcR < 0 ? "neg" : "")}>{fmt(pcR)}</td><td /></>}
                         <td><span className="chip green">auto</span></td>
@@ -159,7 +155,8 @@ export default function BudgetEditor(props: Props) {
                     )}
                     {calc && !base && extra.length > 0 && (
                       <tr>
-                        <td className="t" colSpan={vista === "todos" ? 3 : 2}><span className="chip yellow">sin presupuesto</span> <span className="small muted">{[...new Set(extra.map((m) => m.categoria))].join(", ")}</span></td>
+                        <td className="t"><span className="chip yellow">sin presupuesto</span> <span className="small muted">{[...new Set(extra.map((m) => m.categoria))].join(", ")}</span></td>
+                        <td />
                         <td className="n t">{fmt(sum(extra, (m) => m.cantidad))}</td>
                         <td colSpan={2} />
                       </tr>
@@ -171,58 +168,182 @@ export default function BudgetEditor(props: Props) {
                 anio={anio}
                 mes={mes}
                 tipo={tp.k}
-                vista={vista}
-                defaultPersona={defaultPersona}
-                placeholder={tp.k === "ingreso" ? (base ? "Nuevo ingreso (salario, freelance…)" : "Ingreso extra de este mes") : `Nuevo: ${tp.col.toLowerCase()}`}
+                persona={vista}
+                placeholder={tp.k === "ingreso" ? (base ? "Nuevo ingreso" : "Ingreso extra de este mes") : `Nuevo: ${tp.col.toLowerCase()}`}
                 sugerencias={tp.k === "ingreso" && vista !== "hogar" ? (base ? ["Salario", "Freelance", "Renta"] : ["Bono", "Freelance", "Venta", "Ingreso extra"]) : undefined}
               />
             </section>
           );
         })}
 
-        <section className="card" style={{ borderTop: `3px solid ${color("provision")}` }}>
-          <div className="card-head">
-            <h2>Provisiones</h2>
-            <span className="right num"><b>{money(base ? t.provision.e : t.provision.r)}</b>{!base && <span className="muted small"> / {money(t.provision.e)}</span>}</span>
-          </div>
-          <p className="muted small" style={{ margin: "-8px 0 10px" }}>
-            Lo que apartas cada mes para gastos anuales. Se configuran en <a href="/provisiones">Provisiones</a>.
-          </p>
-          {provisiones.length === 0 ? <p className="muted small">Sin provisiones para {anio}.</p> : (
-            <table>
-              <thead><tr><th>Provisión</th>{vista === "todos" && <th>Quién</th>}<th className="n">Plan</th>{!base && <><th className="n">Apartado</th><th className="n">Dif.</th></>}</tr></thead>
-              <tbody>
-                {provisiones.map((p) => (
-                  <tr key={p.id}>
-                    <td className="t">{p.nombre}</td>
-                    {vista === "todos" && <td className="t small muted">{personaNombre(p.persona)}</td>}
-                    <td className="n t">{fmt(p.estimado)}</td>
-                    {!base && (
-                      <>
-                        <td className="n"><NumCell label="Apartado" value={p.real} onSave={(v) => guardarAporteProvision(p.id, mes, v)} /></td>
-                        <td className={"n " + diffCls((p.real ?? 0) - p.estimado)}>{fmt((p.real ?? 0) - p.estimado)}</td>
-                      </>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </section>
+        <Provisiones anio={anio} mes={mes} persona={vista} provisiones={provisiones} total={t.provision} delIngreso={delIngreso} />
       </div>
     </>
   );
 }
 
-function AddRow({ anio, mes, tipo, vista, defaultPersona, placeholder, sugerencias }: {
-  anio: number; mes: number; tipo: Tipo; vista: Vista; defaultPersona: Persona; placeholder: string; sugerencias?: string[];
+/** Meta de un ahorro o deuda: muestra avance y cuánto se necesita al mes; permite crearla aquí. */
+function Meta({ partida, objetivo, objetivos }: { partida: Partida; objetivo?: Objetivo; objetivos: Objetivo[] }) {
+  const [abierta, setAbierta] = useState(false);
+  const { pending, run } = useSave();
+  const monto = useRef<HTMLInputElement>(null);
+  const fecha = useRef<HTMLInputElement>(null);
+
+  if (objetivo) {
+    const pr = proyeccion(objetivo);
+    const plan = Number(partida.estimado) || 0;
+    const alcanza = pr.necesario == null || plan >= pr.necesario * 0.95;
+    return (
+      <div className="meta-info">
+        <div className="meta-line">
+          <Target size={13} />
+          <span><b>{money(objetivo.acumulado)}</b> de {money(objetivo.monto_meta)}</span>
+          {objetivo.fecha_meta && <span className="muted">· {fechaMes(new Date(objetivo.fecha_meta + "T12:00:00"))}</span>}
+          <span className="num"><b>{pct(pr.pct)}</b></span>
+        </div>
+        <Bar value={objetivo.acumulado} max={objetivo.monto_meta} />
+        {pr.necesario != null && pr.falta > 0 && (
+          <div className={"meta-line small " + (alcanza ? "pos" : "neg")}>
+            Necesitas {money(pr.necesario)}/mes{!alcanza && ` · faltan ${money(pr.necesario - plan)}/mes`}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (!abierta) {
+    const otras = objetivos.filter((o) => o.persona === partida.persona && o.estado !== "logrado");
+    return (
+      <div className="meta-actions">
+        <button type="button" className="chip" onClick={() => setAbierta(true)}><Plus size={11} /> Meta</button>
+        {otras.length > 0 && (
+          <SelectCell
+            label="Vincular a objetivo"
+            className="small"
+            value=""
+            options={[{ v: "", t: "o vincular…" }, ...otras.map((o) => ({ v: String(o.id), t: o.nombre }))]}
+            onSave={(v) => editarPartida(partida.id, "objetivo_id", v)}
+          />
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <form
+      className="meta-form"
+      onSubmit={(e) => {
+        e.preventDefault();
+        let m: number | null;
+        try { m = parseNum(monto.current!.value); } catch { return toast("Monto inválido"); }
+        run(() => crearMetaParaPartida(partida.id, m, fecha.current!.value), "Meta creada", () => setAbierta(false));
+      }}
+    >
+      <input ref={monto} className="field" inputMode="decimal" placeholder="Meta $" aria-label="Monto meta" autoFocus />
+      <input ref={fecha} className="field" type="date" aria-label="Para cuándo" />
+      <button className="btn sm primary" disabled={pending}>Guardar</button>
+      <button type="button" className="icon-btn" aria-label="Cancelar" onClick={() => setAbierta(false)}><X size={14} /></button>
+    </form>
+  );
+}
+
+function Provisiones({ anio, mes, persona, provisiones, total, delIngreso }: {
+  anio: number; mes: number; persona: Persona; provisiones: ProvisionMes[]; total: { e: number; r: number };
+  delIngreso: (v: number) => string | null;
+}) {
+  const base = mes === 0;
+  const { pending, run } = useSave();
+  const nombre = useRef<HTMLInputElement>(null);
+  const meta = useRef<HTMLInputElement>(null);
+  const [usando, setUsando] = useState<number | null>(null);
+  const uso = useRef<HTMLInputElement>(null);
+
+  return (
+    <section className="card span-2" style={{ borderTop: `3px solid ${color("provision")}` }}>
+      <div className="card-head">
+        <h2>Provisiones</h2>
+        {total.e > 0 && delIngreso(total.e) && <span className="chip">{delIngreso(total.e)}</span>}
+        <span className="right num"><b>{money(base ? total.e : total.r)}</b>{!base && <span className="muted small"> / {money(total.e)}</span>}</span>
+      </div>
+      <div className="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Provisión</th>
+              <th className="n">Meta año</th>
+              <th className="n">Mensual</th>
+              {!base && <th className="n">Apartado</th>}
+              <th className="n">Disponible</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {provisiones.length === 0 && <tr><td colSpan={6} className="t muted small">Nada todavía</td></tr>}
+            {provisiones.map((p) => (
+              <tr key={p.id}>
+                <td className="name-col">
+                  <TextCell label="Provisión" value={p.nombre} onSave={(v) => editarProvision(p.id, "nombre", v)} />
+                  <div className="meta-info">
+                    <Bar value={p.provisionado} max={p.meta_anual} />
+                    <span className="muted small num">{p.meta_anual > 0 ? pct(p.provisionado / p.meta_anual) : "—"} · usado {money(p.usado)}</span>
+                  </div>
+                  {usando === p.id && (
+                    <form
+                      className="meta-form"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        let m: number | null;
+                        try { m = parseNum(uso.current!.value); } catch { return toast("Monto inválido"); }
+                        if (!m) return uso.current!.focus();
+                        run(() => agregarUso(p.id, m, new Date().toISOString().slice(0, 10), ""), "Uso registrado", () => setUsando(null));
+                      }}
+                    >
+                      <input ref={uso} className="field" inputMode="decimal" placeholder="Usé $" aria-label="Monto usado" autoFocus />
+                      <button className="btn sm dark" disabled={pending}>Registrar</button>
+                      <button type="button" className="icon-btn" aria-label="Cancelar" onClick={() => setUsando(null)}><X size={14} /></button>
+                    </form>
+                  )}
+                </td>
+                <td className="n"><NumCell label="Meta anual" value={p.meta_anual} onSave={(v) => editarProvision(p.id, "meta_anual", v)} /></td>
+                <td className="n t">{fmt(p.estimado)}</td>
+                {!base && <td className="n"><NumCell label="Apartado" value={p.real} onSave={(v) => guardarAporteProvision(p.id, mes, v)} /></td>}
+                <td className={"n t " + (p.provisionado - p.usado < 0 ? "neg" : "")}>{fmt(p.provisionado - p.usado)}</td>
+                <td style={{ width: 64, whiteSpace: "nowrap" }}>
+                  <button type="button" className="icon-btn use" title="Registrar uso" aria-label="Registrar uso" onClick={() => setUsando(p.id)}>−$</button>
+                  <ActionButton className="icon-btn" title="Eliminar" action={() => borrarProvision(p.id)} confirm={`¿Eliminar "${p.nombre}"?`}>
+                    <Trash2 size={15} />
+                  </ActionButton>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <form
+        className="addrow"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const n = nombre.current!.value.trim();
+          if (!n) return nombre.current!.focus();
+          let m: number | null;
+          try { m = parseNum(meta.current!.value); } catch { return toast("Monto inválido"); }
+          run(() => agregarProvision(anio, persona, n, m), "Provisión creada", () => { nombre.current!.value = ""; meta.current!.value = ""; });
+        }}
+      >
+        <input ref={nombre} className="field" placeholder="Nueva provisión" aria-label="Nueva provisión" />
+        <input ref={meta} className="field n" inputMode="decimal" placeholder="Meta año $" aria-label="Meta anual" />
+        <button className="btn sm primary" disabled={pending}><Plus size={14} /> Agregar</button>
+      </form>
+    </section>
+  );
+}
+
+function AddRow({ anio, mes, tipo, persona, placeholder, sugerencias }: {
+  anio: number; mes: number; tipo: Tipo; persona: Persona; placeholder: string; sugerencias?: string[];
 }) {
   const { pending, run } = useSave();
   const nombre = useRef<HTMLInputElement>(null);
   const monto = useRef<HTMLInputElement>(null);
-  const [elegida, setPersona] = useState<Persona>(defaultPersona);
-  // En una vista individual el dueño es siempre esa persona; solo en Resumen se elige
-  const persona: Persona = vista === "todos" ? elegida : vista;
   const submit = () => {
     const n = nombre.current!.value.trim();
     if (!n) return nombre.current!.focus();
@@ -244,11 +365,6 @@ function AddRow({ anio, mes, tipo, vista, defaultPersona, placeholder, sugerenci
         </div>
       )}
       <input ref={nombre} className="field" placeholder={placeholder} aria-label={placeholder} />
-      {vista === "todos" && (
-        <select className="field" aria-label="Persona" value={persona} onChange={(e) => setPersona(e.target.value as Persona)}>
-          {personaOptions.map((o) => <option key={o.v} value={o.v}>{o.t}</option>)}
-        </select>
-      )}
       <input ref={monto} className="field n" inputMode="decimal" placeholder="Plan $" aria-label="Monto planeado" />
       <button className="btn sm primary" disabled={pending}><Plus size={14} /> Agregar</button>
     </form>

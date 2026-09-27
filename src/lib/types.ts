@@ -50,6 +50,7 @@ export type Movimiento = {
 };
 export type ProvisionMes = {
   id: number; persona: Persona; nombre: string; estimado: number; real: number | null;
+  meta_anual: number; monto_inicial: number; provisionado: number; usado: number;
 };
 export type Provision = {
   id: number; anio: number; persona: Persona; nombre: string; meta_anual: number; monto_inicial: number;

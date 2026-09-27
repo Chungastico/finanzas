@@ -8,7 +8,7 @@ import MonthStrip from "@/components/MonthStrip";
 import { aplicarPlanBase, crearPlantilla } from "@/lib/actions";
 import { porColocar, totalesMes } from "@/lib/calc";
 import { q } from "@/lib/db";
-import { getMes, getObjetivosLista } from "@/lib/data";
+import { getMes, getObjetivos } from "@/lib/data";
 import { money } from "@/lib/format";
 import { MESES, PERSONAS, vistaNombre } from "@/lib/types";
 import { getContexto } from "@/lib/vista";
@@ -22,13 +22,11 @@ export default async function PresupuestoMes({ params }: PageProps<"/presupuesto
     q<{ n: number }>("SELECT count(*)::int AS n FROM fin.partidas WHERE anio=$1 AND mes=0", [anio]),
     q<{ n: number }>("SELECT count(*)::int AS n FROM fin.partidas WHERE anio=$1 AND mes=0", [anio - 1]),
   ]);
-  const periodo = mes === 0 ? "Plan base" : `${MESES[mes - 1]} ${anio}`;
 
   return (
     <div className="page">
       <div className="page-head">
         <div>
-          <div className="eyebrow">Presupuesto {anio} · {periodo}</div>
           <h1>{vista === "todos" ? "Presupuesto" : `Presupuesto de ${vistaNombre(vista)}`}</h1>
         </div>
         <div className="actions">
@@ -37,11 +35,6 @@ export default async function PresupuestoMes({ params }: PageProps<"/presupuesto
       </div>
       <MonthStrip href="/presupuesto" mes={mes} anio={anio} base />
       <BolsilloTabs vista={vista} />
-      {mes === 0 && (
-        <p className="muted" style={{ margin: "0 0 16px" }}>
-          El plan base es el mes ideal de cada uno: lo que espera ganar y cómo lo reparte. Luego se aplica a cada mes con un clic y ahí se captura lo real.
-        </p>
-      )}
       {vista === "todos"
         ? <Resumen anio={anio} mes={mes} baseVacia={base.n === 0} />
         : <Editor anio={anio} mes={mes} vista={vista} baseVacia={base.n === 0} anioAnteriorTienePlan={prev.n > 0} />}
@@ -52,7 +45,7 @@ export default async function PresupuestoMes({ params }: PageProps<"/presupuesto
 async function Editor({ anio, mes, vista, baseVacia, anioAnteriorTienePlan }: {
   anio: number; mes: number; vista: "gabriel" | "mel" | "hogar"; baseVacia: boolean; anioAnteriorTienePlan: boolean;
 }) {
-  const [d, objetivos] = await Promise.all([getMes(anio, mes, vista), getObjetivosLista(vista)]);
+  const [d, { objetivos }] = await Promise.all([getMes(anio, mes, vista), getObjetivos(vista)]);
   return (
     <BudgetEditor anio={anio} mes={mes} vista={vista} {...d} objetivos={objetivos} baseVacia={baseVacia} anioAnteriorTienePlan={anioAnteriorTienePlan} />
   );
@@ -71,7 +64,7 @@ async function Resumen({ anio, mes, baseVacia }: { anio: number; mes: number; ba
   return (
     <>
       <div className="summary-bar" style={{ justifyContent: "space-between" }}>
-        <span className="muted">Elige un bolsillo para editar su presupuesto. Aquí ves cómo va cada uno.</span>
+<span />
         {mes > 0 && !baseVacia && (
           <ActionButton
             className="btn primary"
@@ -97,7 +90,6 @@ async function Resumen({ anio, mes, baseVacia }: { anio: number; mes: number; ba
                 <span className={`avatar ${b.k}`}>{b.k === "hogar" ? <Home size={17} /> : b.nombre[0]}</span>
                 <div>
                   <h2>{b.nombre}</h2>
-                  <span className="muted small">{b.k === "hogar" ? "Fondo común · entra lo que aportan los dos" : "Finanzas personales"}</span>
                 </div>
               </div>
               <div className="list">

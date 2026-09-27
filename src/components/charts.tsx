@@ -145,7 +145,6 @@ export function PlanVsReal({ totales }: { totales: Totales }) {
           </div>
         );
       })}
-      <p className="muted small" style={{ margin: "10px 0 0" }}>La barra es lo real; la línea vertical marca lo planeado.</p>
     </div>
   );
 }

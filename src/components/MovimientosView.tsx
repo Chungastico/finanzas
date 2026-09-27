@@ -57,7 +57,7 @@ export default function MovimientosView({ anio, mes, vista, movimientos, categor
       </div>
 
       <section className="card" style={{ alignSelf: "start" }}>
-        <div className="card-head"><h2>Por categoría</h2><span className="hint">gastado / plan</span></div>
+        <div className="card-head"><h2>Por categoría</h2></div>
         {resumen.length === 0 ? <p className="muted small">Agrega gastos variables a tu presupuesto para ver el avance.</p> : resumen.map((x) => (
           <div key={x.n} style={{ padding: "8px 0", borderBottom: "1px solid var(--line-2)" }}>
             <div style={{ display: "flex", marginBottom: 6, gap: 8 }}>
@@ -101,7 +101,7 @@ function QuickAdd({ anio, mes, vista, nombres }: { anio: number; mes: number; vi
 
   return (
     <section className="card" style={{ borderTop: "3px solid var(--green)" }}>
-      <div className="card-head"><h2>Registrar gasto</h2><span className="hint">Enter para guardar</span></div>
+      <div className="card-head"><h2>Registrar gasto</h2></div>
       <form onSubmit={(e) => { e.preventDefault(); submit(); }}>
         {vista === "todos" && (
           <div className="seg" style={{ background: "var(--line-2)", marginBottom: 12, maxWidth: 360, gridTemplateColumns: "repeat(3, 1fr)" }}>

@@ -354,6 +354,36 @@ export async function aportarObjetivo(objetivoId: number, monto: Num, fecha: str
   });
 }
 
+/**
+ * Crea una meta (objetivo) desde un ahorro o una deuda del presupuesto y la vincula
+ * a esa partida y a las del mismo nombre y dueño en el año, para que su avance suba solo.
+ */
+export async function crearMetaParaPartida(partidaId: number, montoMeta: Num, fechaMeta: string) {
+  return run(async () => {
+    const meta = numOk(montoMeta);
+    if (!meta || meta <= 0) throw new Error("Define cuánto quieres juntar");
+    const fecha = dateOk(fechaMeta);
+    if (!fecha) throw new Error("Elige para cuándo");
+    const [p] = await q<{ anio: number; persona: Persona; tipo: Tipo; nombre: string }>(
+      "SELECT anio, persona, tipo, nombre FROM fin.partidas WHERE id=$1", [id(partidaId)],
+    );
+    if (!p) throw new Error("Partida no encontrada");
+    if (p.tipo !== "ahorro" && p.tipo !== "deuda") throw new Error("Solo ahorros y deudas pueden tener meta");
+    const meses = (Number(fecha.slice(0, 4)) - new Date().getFullYear()) * 12 + (Number(fecha.slice(5, 7)) - (new Date().getMonth() + 1));
+    const horizonte = meses <= 12 ? "corto" : meses <= 36 ? "mediano" : "largo";
+    const [o] = await q<{ id: number }>(
+      `INSERT INTO fin.objetivos (persona, nombre, categoria, horizonte, monto_meta, fecha_meta)
+       VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
+      [p.persona, p.nombre, p.tipo === "deuda" ? "deuda" : "ahorro", horizonte, meta, fecha],
+    );
+    await q(
+      "UPDATE fin.partidas SET objetivo_id=$1 WHERE anio=$2 AND persona=$3 AND tipo=$4 AND nombre=$5",
+      [o.id, p.anio, p.persona, p.tipo, p.nombre],
+    );
+    refresh();
+  });
+}
+
 export async function borrarAporte(rowId: number) {
   return run(async () => {
     await mutate("DELETE FROM fin.objetivo_aportes WHERE id=$1", [id(rowId)]);

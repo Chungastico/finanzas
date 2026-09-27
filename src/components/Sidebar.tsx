@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useTransition } from "react";
 import {
-  LayoutDashboard, BarChart3, ClipboardList, ReceiptText, PiggyBank, Target, Menu, Wallet,
+  LayoutDashboard, BarChart3, ClipboardList, ReceiptText, Target, Menu, Wallet,
 } from "lucide-react";
 import { setAnio, setVista } from "@/lib/actions";
 import { VISTAS, type Vista } from "@/lib/types";
@@ -15,7 +15,6 @@ const NAV = [
   { href: "/analisis", t: "Análisis mensual", Icon: BarChart3 },
   { href: "/presupuesto", t: "Presupuesto", Icon: ClipboardList },
   { href: "/movimientos", t: "Movimientos", Icon: ReceiptText },
-  { href: "/provisiones", t: "Provisiones", Icon: PiggyBank },
   { href: "/objetivos", t: "Objetivos", Icon: Target },
 ];
 

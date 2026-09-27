@@ -17,13 +17,6 @@ export async function getAnios() {
   return rows.map((r) => r.anio);
 }
 
-export async function getObjetivosLista(vista: Vista) {
-  return q<{ id: number; nombre: string; persona: string }>(
-    `SELECT id, nombre, persona FROM fin.objetivos WHERE estado <> 'logrado' AND ${P("persona", 1)} ORDER BY prioridad, nombre`,
-    [personaParam(vista)],
-  );
-}
-
 /** Todo lo necesario para un mes (mes 0 = plan base). */
 export async function getMes(anio: number, mes: number, vista: Vista) {
   const p = personaParam(vista);
@@ -41,7 +34,10 @@ export async function getMes(anio: number, mes: number, vista: Vista) {
           [anio, mes, p],
         ),
     q<ProvisionMes>(
-      `SELECT pv.id, pv.persona, pv.nombre, CEIL((pv.meta_anual - pv.monto_inicial) / 12.0)::float AS estimado, a.real
+      `SELECT pv.id, pv.persona, pv.nombre, CEIL((pv.meta_anual - pv.monto_inicial) / 12.0)::float AS estimado, a.real,
+              pv.meta_anual, pv.monto_inicial,
+              (pv.monto_inicial + COALESCE((SELECT SUM(x.real) FROM fin.provision_aportes x WHERE x.provision_id = pv.id), 0))::float AS provisionado,
+              COALESCE((SELECT SUM(u.cantidad) FROM fin.provision_usos u WHERE u.provision_id = pv.id), 0)::float AS usado
          FROM fin.provisiones pv
          LEFT JOIN fin.provision_aportes a ON a.provision_id = pv.id AND a.mes = $2
         WHERE pv.anio = $1 AND ${P("pv.persona", 3)} ORDER BY pv.orden, pv.id`,

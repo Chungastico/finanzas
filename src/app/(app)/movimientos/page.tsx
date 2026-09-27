@@ -1,6 +1,6 @@
 import MovimientosView from "@/components/MovimientosView";
 import { getMovimientos } from "@/lib/data";
-import { MESES, VISTAS } from "@/lib/types";
+import { MESES } from "@/lib/types";
 import { getContexto } from "@/lib/vista";
 import Link from "next/link";
 
@@ -15,7 +15,6 @@ export default async function Movimientos({ searchParams }: PageProps<"/movimien
     <div className="page">
       <div className="page-head">
         <div>
-          <div className="eyebrow"><span className={`dot ${vista}`} /> {VISTAS.find((v) => v.k === vista)?.t} · Movimientos</div>
           <h1>{MESES[mes - 1]} {anio}</h1>
         </div>
         <div className="actions"><Link className="btn" href={`/analisis/${mes}`}>Ver análisis</Link></div>

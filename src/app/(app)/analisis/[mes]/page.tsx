@@ -6,7 +6,7 @@ import MonthStrip from "@/components/MonthStrip";
 import { gastoPorCategoria, porColocar, realDe, salidas, sinPresupuesto, tasaAhorro, totalesMes } from "@/lib/calc";
 import { getMes } from "@/lib/data";
 import { fechaCorta, money, pct, sum } from "@/lib/format";
-import { CAT_LABEL, MESES, SALIDAS, VISTAS, personaNombre, type Cat } from "@/lib/types";
+import { CAT_LABEL, MESES, SALIDAS, personaNombre, type Cat } from "@/lib/types";
 import { getContexto } from "@/lib/vista";
 
 export default async function AnalisisMes({ params }: PageProps<"/analisis/[mes]">) {
@@ -36,7 +36,6 @@ export default async function AnalisisMes({ params }: PageProps<"/analisis/[mes]
     <div className="page">
       <div className="page-head">
         <div>
-          <div className="eyebrow"><span className={`dot ${vista}`} /> {VISTAS.find((v) => v.k === vista)?.t} · Análisis mensual</div>
           <h1 style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <Link className="icon-btn" aria-label="Mes anterior" href={`/analisis/${prevMes}`}><ChevronLeft size={20} /></Link>
             {MESES[mes - 1]} {anio}
@@ -53,7 +52,6 @@ export default async function AnalisisMes({ params }: PageProps<"/analisis/[mes]
       {vacio && (
         <div className="card empty" style={{ marginBottom: 16 }}>
           <h3>Este mes todavía no tiene presupuesto</h3>
-          <p className="small">Aplica tu plan base para empezar a comparar plan vs. real.</p>
           <Link className="btn primary" href={`/presupuesto/${mes}`}>Ir al presupuesto de {MESES[mes - 1]}</Link>
         </div>
       )}
@@ -67,7 +65,7 @@ export default async function AnalisisMes({ params }: PageProps<"/analisis/[mes]
         <div className="kpi" style={{ ["--k" as string]: "var(--c-gasto_variable)" }}>
           <div className="l">Gastado</div><div className="v">{money(gastado)}</div>
           <Bar value={gastado} max={gastadoPlan} over={gastado > gastadoPlan} />
-          <div className="s" style={{ marginTop: 6 }}>de {money(gastadoPlan)} · fijos, variables, deudas</div>
+          <div className="s" style={{ marginTop: 6 }}>de {money(gastadoPlan)}</div>
         </div>
         <div className="kpi" style={{ ["--k" as string]: "var(--c-ahorro)" }}>
           <div className="l">Ahorrado</div><div className="v">{money(t.ahorro.r + t.provision.r)}</div>
@@ -76,13 +74,13 @@ export default async function AnalisisMes({ params }: PageProps<"/analisis/[mes]
         </div>
         <div className={"kpi " + (porColocar(t, "r") < 0 ? "black" : "accent")}>
           <div className="l">{vista === "hogar" ? "Al fondo hogar (real)" : "Por colocar (real)"}</div><div className="v">{money(porColocar(t, "r"))}</div>
-          <div className="s">{porColocar(t, "r") < 0 ? "usaste más de lo que entró" : "ingresos − todo lo usado"} · plan {money(porColocar(t, "e"))}</div>
+          <div className="s">plan {money(porColocar(t, "e"))}</div>
         </div>
       </div>
 
       <div className="grid cols-2">
         <section className="card">
-          <div className="card-head"><h2>Plan vs. real</h2><span className="hint">por categoría</span></div>
+          <div className="card-head"><h2>Plan vs. real</h2></div>
           <PlanVsReal totales={t} />
         </section>
 
@@ -123,7 +121,7 @@ export default async function AnalisisMes({ params }: PageProps<"/analisis/[mes]
         </section>
 
         <section className="card">
-          <div className="card-head"><h2>vs. {MESES[prevMes - 1]}</h2><span className="hint">real</span></div>
+          <div className="card-head"><h2>vs. {MESES[prevMes - 1]}</h2></div>
           <table>
             <thead><tr><th>Categoría</th><th className="n">{MESES[prevMes - 1].slice(0, 3)}</th><th className="n">{MESES[mes - 1].slice(0, 3)}</th><th className="n">Cambio</th></tr></thead>
             <tbody>

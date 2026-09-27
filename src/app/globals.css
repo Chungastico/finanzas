@@ -189,6 +189,24 @@ label.lbl { display: flex; flex-direction: column; gap: 5px; font-size: 12px; fo
 .addrow .quick .chip { border: 0; cursor: pointer; }
 .addrow .quick .chip:hover { background: var(--green-soft); color: var(--green-ink); }
 
+/* barra real vs plan por sección */
+.sec-bar { display: flex; align-items: center; gap: 10px; margin: -6px 0 10px; }
+.sec-bar .bar { flex: 1; }
+
+/* metas y provisiones dentro de una fila */
+.meta-info { padding: 2px 8px 6px; display: flex; flex-direction: column; gap: 4px; }
+.meta-line { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12.5px; }
+.meta-line svg { color: var(--green-ink); }
+.meta-line .num { margin-left: auto; }
+.meta-actions { display: flex; align-items: center; gap: 6px; padding: 0 8px 6px; }
+.meta-actions .chip { border: 0; cursor: pointer; }
+.meta-actions .chip:hover { background: var(--green-soft); color: var(--green-ink); }
+.meta-actions select.cell { color: var(--muted); padding: 2px 6px; width: auto; }
+.meta-form { display: flex; align-items: center; gap: 6px; padding: 0 8px 6px; flex-wrap: wrap; }
+.meta-form .field { width: auto; flex: 1 1 110px; padding: 5px 8px; }
+.icon-btn.use { font-weight: 700; font-size: 12px; }
+.icon-btn.use:hover { color: var(--green-ink); background: var(--green-soft); }
+
 /* pestañas de bolsillo */
 .bolsillo-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 18px; }
 .bolsillo-tabs button { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); font-weight: 600; cursor: pointer; color: var(--ink-2); }

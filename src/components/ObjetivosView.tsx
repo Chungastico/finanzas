@@ -49,10 +49,8 @@ export default function ObjetivosView({ vista, objetivos, aportes, plan }: {
 
   return (
     <>
-      <div className="page-head" style={{ marginTop: -8 }}>
-        <p className="muted" style={{ margin: 0, maxWidth: 640 }}>
-          Define hacia dónde va tu dinero. Vincula tus ahorros y pagos de deuda del presupuesto a cada objetivo y el avance se actualiza solo.
-        </p>
+      <div className="page-head">
+        <h1>Objetivos</h1>
         <div className="actions"><button className="btn primary" onClick={() => abrir()}><Plus size={15} /> Nuevo objetivo</button></div>
       </div>
 
@@ -63,16 +61,16 @@ export default function ObjetivosView({ vista, objetivos, aportes, plan }: {
           <div className="s">{money(sum(activos, (o) => o.acumulado))} de {money(sum(activos, (o) => o.monto_meta))}</div>
         </div>
         <div className="kpi" style={{ ["--k" as string]: "var(--red)" }}>
-          <div className="l">Necesitas al mes</div><div className="v">{money(necesario)}</div><div className="s">para cumplir todas las fechas</div>
+          <div className="l">Necesitas al mes</div><div className="v">{money(necesario)}</div>
         </div>
         <div className="kpi" style={{ ["--k" as string]: "var(--green)" }}>
           <div className="l">Tu plan base aparta</div><div className="v">{money(planMensual)}</div>
-          <div className="s">ritmo real: {money(ritmo)}/mes (últimos 3 meses)</div>
+          <div className="s">ritmo real {money(ritmo)}/mes</div>
         </div>
         <div className={"kpi " + (brecha >= 0 ? "accent" : "black")}>
           <div className="l">Brecha estratégica</div>
           <div className="v" style={brecha < 0 ? { color: "#ff8a80" } : undefined}>{brecha >= 0 ? "+" : "−"}{money(Math.abs(brecha))}</div>
-          <div className="s">{brecha >= 0 ? "tu plan alcanza para tus metas" : "ajusta fechas, montos o tu plan base"}</div>
+          
         </div>
       </div>
 
@@ -88,7 +86,6 @@ export default function ObjetivosView({ vista, objetivos, aportes, plan }: {
                 <span className={`avatar ${g.k}`}>{g.k === "hogar" ? <Home size={17} /> : g.t[0]}</span>
                 <div>
                   <h2>{g.t}</h2>
-                  <span className="muted small">{g.d}</span>
                 </div>
               </div>
               <div className="owner-stats">
@@ -108,7 +105,6 @@ export default function ObjetivosView({ vista, objetivos, aportes, plan }: {
                 <button className="goal-empty" onClick={() => abrir(g.k)}>
                   <Flag size={22} />
                   <b>{g.k === "hogar" ? "Sin objetivos en grupo" : `${g.t} aún no tiene objetivos`}</b>
-                  <span className="small">{g.k === "hogar" ? "Ej. fondo de emergencia del hogar, viaje juntos, mudanza." : "Ej. fondo personal, pagar una tarjeta, curso."}</span>
                   <span className="btn sm primary" style={{ marginTop: 6 }}><Plus size={14} /> Crear objetivo</span>
                 </button>
               )}
